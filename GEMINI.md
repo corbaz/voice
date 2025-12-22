@@ -27,17 +27,21 @@ El despliegue se gestiona a través de Surge.sh. El proceso consiste en copiar e
 
 ---
 
-## Convenciones de Desarrollo
+### Convenciones de Desarrollo
 
-### Arquitectura
-- **Lógica en un Solo Archivo:** La mayor parte de la lógica de la aplicación (UI, gestión de estado, llamadas a la API) se encuentra actualmente dentro de `index.html`.
-- **Variables de Entorno:** La aplicación busca un archivo opcional `env.js` (ignorado por git) para cargar una `LOCAL_ENV.GROQ_API_KEY`. Si no está presente, el usuario debe ingresarla manualmente en la interfaz.
-- **Gestión de Historial:** El historial de chat se almacena en el `localStorage` del navegador para proporcionar contexto al modelo de lenguaje (LLM).
+#### Arquitectura
+- **Lógica en un Solo Archivo:** La mayor parte de la lógica reside en `index.html`, pero estrictamente separada: HTML para estructura y JS para comportamiento.
+- **Clean Code (JS No Intrusivo):** NO usar atributos `onclick` u otros eventos inline en el HTML. Usar siempre `addEventListener` en el bloque de script principal y referencias por `id`.
+- **Variables Globales:** Evitar la dependencia de IDs globales automáticos. Declarar referencias al DOM explícitamente al inicio del script (`const myElement = document.getElementById...`).
+- **Variables de Entorno:** Soporte para `env.js` (ignorado por git) para configuración local.
+- **Gestión de Historial:** Persistencia en `localStorage`.
 
-### Patrones de UI/UX
-- **Tailwind Primero:** Los estilos se aplican mediante clases de utilidad.
-- **Bucle de Retroalimentación:** Un cuadro dedicado llamado "Registro del Sistema" proporciona información técnica en tiempo real sobre las llamadas a la API y el procesamiento de audio.
-- **Modo Automático:** Implementa un flujo de trabajo manos libres: `Grabar -> Transcribir -> LLM -> TTS`.
+#### Patrones de UI/UX
+- **Accesibilidad (A11y):** Prioridad alta. Todos los `inputs` deben tener `labels` asociados correctamente (anidados o vía `for`). Los botones deben tener descripciones claras o atributos `aria`.
+- **Diseño Modular:** Uso de componentes visuales como el **Acordeón** (para la API Key) para mantener la interfaz limpia.
+- **Tailwind Primero:** Estilos vía clases de utilidad.
+- **Feedback Visual:** Uso de iconos dinámicos (ej. ojito de contraseña, flechas de acordeón) y estados de carga.
+- **Modo Automático:** Flujo manos libres: `Grabar -> Transcribir -> LLM -> TTS`.
 
 ---
 
