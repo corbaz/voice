@@ -5,7 +5,7 @@ const detectedKey = (typeof window.LOCAL_ENV !== 'undefined' && window.LOCAL_ENV
 console.log("🔧 Config: Clave detectada en env.js:", detectedKey === "gsk_..." ? "Template (No definida)" : "Clave válida encontrada");
 
 export const AppConfig = {
-    VERSION: "3.1",
+    VERSION: "3.6",
     GROQ_BASE_URL: "https://api.groq.com/openai/v1",
     DEFAULT_GROQ_API_KEY: detectedKey,
     MODELS: {

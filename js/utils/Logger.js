@@ -1,6 +1,9 @@
 export class Logger {
     constructor(logElement) {
         this.logElement = logElement;
+        if (this.logElement) {
+            this.logElement.textContent = "";
+        }
     }
 
     log(message, level = "info") {

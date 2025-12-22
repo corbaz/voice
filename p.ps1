@@ -1,9 +1,10 @@
 clear
 
-# Create dist directory if it doesn't exist
-if (!(Test-Path -Path "dist")) {
-    New-Item -ItemType Directory -Path "dist" | Out-Null
+# Clean and recreate dist directory
+if (Test-Path -Path "dist") {
+    Remove-Item -Path "dist" -Recurse -Force
 }
+New-Item -ItemType Directory -Path "dist" | Out-Null
 
 # Copy index.html to dist/index.html
 Copy-Item -Path "index.html" -Destination "dist/index.html" -Force

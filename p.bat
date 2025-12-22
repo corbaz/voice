@@ -1,11 +1,15 @@
 @echo off
 cls
 
-:: Create dist directory if it doesn't exist
-if not exist "dist" mkdir "dist"
+:: Clean and recreate dist directory
+if exist "dist" rmdir /s /q "dist"
+mkdir "dist"
 
 :: Copy index.html to dist/index.html
 copy /Y "index.html" "dist\index.html"
+
+:: Copy js folder to dist/js
+xcopy "js" "dist\js" /E /I /Y
 
 :: Run surge
 call surge dist --domain voz-ia.surge.sh

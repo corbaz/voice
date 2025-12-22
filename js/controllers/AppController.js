@@ -1,5 +1,6 @@
 import { AppConfig } from "../config.js";
 import { Logger } from "../utils/Logger.js";
+import { VoiceAlert } from "../utils/Alerts.js";
 import { StorageService } from "../services/StorageService.js";
 import { ConversationHistory } from "../models/ConversationHistory.js";
 import { AudioRecorderService } from "../services/AudioRecorderService.js";
@@ -128,6 +129,14 @@ export class AppController {
                 this.logger.log("Language switched to English by voice selection.");
             }
         });
+
+        // Keyboard shortcuts
+        this.elements.transcriptionEl.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                this.elements.askBtn.click(); // Trigger click to provide visual feedback if any
+            }
+        });
     }
 
     // ========== Handlers ==========
@@ -162,7 +171,11 @@ export class AppController {
         } catch (error) {
             this.logger.error(`Micrófono: ${error.message}`);
             this.updateRecordStatus(`Error: ${error.message}`, "red");
-            alert(`Error al acceder al micrófono:\n${error.message}`);
+            VoiceAlert.fire({
+                icon: 'error',
+                title: 'Error de Micrófono',
+                text: `No se pudo acceder al micrófono:\n${error.message}`
+            });
             this.elements.recordBtn.disabled = false;
             this.elements.stopBtn.disabled = true;
         }
@@ -213,16 +226,22 @@ export class AppController {
 
             if (detailedError) {
                  statusMsg = detailedError.length > 30 ? detailedError.substring(0, 30) + "..." : detailedError;
+                 VoiceAlert.fire({ icon: 'error', title: 'Error de Transcripción', text: detailedError });
             } else if (errMsg.includes("falta api key")) {
                 statusMsg = "Falta API Key 🔑";
+                VoiceAlert.fire({ icon: 'warning', title: 'Falta API Key', text: 'Por favor, ingresa tu API Key de Groq en la configuración.' });
             } else if (errMsg.includes("401") || errMsg.includes("unauthorized")) {
                 statusMsg = "API Key Inválida 🚫";
+                VoiceAlert.fire({ icon: 'error', title: 'API Key Inválida', text: 'La clave proporcionada no es válida. Verifica que esté escrita correctamente.' });
             } else if (errMsg.includes("404") || errMsg.includes("not found")) {
                 statusMsg = "Modelo no encontrado ❓";
+                VoiceAlert.fire({ icon: 'error', title: 'Modelo no encontrado', text: 'El modelo solicitado no está disponible.' });
             } else if (errMsg.includes("429")) {
                 statusMsg = "Límite excedido ⏳";
+                VoiceAlert.fire({ icon: 'warning', title: 'Límite Excedido', text: 'Has superado el límite de uso de la API. Intenta más tarde.' });
             } else if (errMsg.includes("network") || errMsg.includes("failed to fetch")) {
                 statusMsg = "Error de conexión 🌐";
+                VoiceAlert.fire({ icon: 'error', title: 'Error de Conexión', text: 'No se pudo conectar con el servidor. Revisa tu internet.' });
             }
 
             this.updateRecordStatus(statusMsg, "red");
@@ -232,7 +251,11 @@ export class AppController {
     async handleAskLLM() {
         const inputText = this.elements.transcriptionEl.value.trim();
         if (!inputText) {
-            alert("No hay texto para enviar al LLM.");
+            VoiceAlert.fire({
+                icon: 'warning',
+                title: 'Texto Vacío',
+                text: 'No hay texto para enviar al LLM.'
+            });
             return;
         }
 
@@ -287,12 +310,16 @@ export class AppController {
             if (detailedError) {
                 // If we extracted a specific message from JSON, use it (truncated if too long)
                 statusMsg = detailedError.length > 30 ? detailedError.substring(0, 30) + "..." : detailedError;
+                VoiceAlert.fire({ icon: 'error', title: 'Error de Chat', text: detailedError });
             } else if (errMsg.includes("401") || errMsg.includes("unauthorized")) {
                 statusMsg = "API Key Inválida 🚫";
+                VoiceAlert.fire({ icon: 'error', title: 'API Key Inválida', text: 'La clave proporcionada no es válida. Verifica que esté escrita correctamente.' });
             } else if (errMsg.includes("404") || errMsg.includes("not found")) {
                 statusMsg = "Modelo no encontrado ❓";
+                VoiceAlert.fire({ icon: 'error', title: 'Modelo no encontrado', text: 'El modelo solicitado no está disponible.' });
             } else if (errMsg.includes("429")) {
                 statusMsg = "Límite excedido ⏳";
+                VoiceAlert.fire({ icon: 'warning', title: 'Límite Excedido', text: 'Has superado el límite de uso de la API. Intenta más tarde.' });
             }
             
             this.updateRecordStatus(statusMsg, "red");
@@ -302,7 +329,11 @@ export class AppController {
     async handlePlayTTS() {
         const text = this.elements.llmResponseEl.value.trim();
         if (!text) {
-            alert("No hay texto para convertir a voz.");
+            VoiceAlert.fire({
+                icon: 'warning',
+                title: 'Texto Vacío',
+                text: 'No hay texto para convertir a voz.'
+            });
             return;
         }
 
