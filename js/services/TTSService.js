@@ -9,9 +9,9 @@ export class TTSService {
 
     loadVoices() {
         this.voices = this.synthesis.getVoices();
-        this.synthesis.onvoiceschanged = () => {
+        this.synthesis.addEventListener('voiceschanged', () => {
             this.voices = this.synthesis.getVoices();
-        };
+        });
     }
 
     getVoicesByLanguage(langCode) {

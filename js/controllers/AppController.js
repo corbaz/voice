@@ -67,9 +67,8 @@ export class AppController {
 
         this.updateHistoryStatus();
         
-        // Populate voices when they are loaded
         this.populateVoiceLists();
-        window.speechSynthesis.onvoiceschanged = () => this.populateVoiceLists();
+        window.speechSynthesis.addEventListener('voiceschanged', () => this.populateVoiceLists());
     }
 
     updateApiKeyIconColor() {
