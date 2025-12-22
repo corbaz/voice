@@ -101,7 +101,7 @@
       >
         <div class="flex items-center gap-3">
           <span class="material-icons text-cyan-400">mic</span>
-          <span class="font-semibold tracking-wide text-red-400">JCC Voice AI</span>
+          <span class="font-semibold tracking-wide text-red-400">JCC Voice AI <small id="appVersion" class="text-xs text-cyan-400 ml-1 font-normal"></small></span>
         </div>
       </header>
 
@@ -299,6 +299,17 @@
 
     <!-- MAIN LOGIC SCRIPT (Merged from old index.html) -->
     <script>
+        // ==========================================
+        // CONFIG & STATE
+        // ==========================================
+        const APP_VERSION = "2.0";
+
+        // Initialize Version Display
+        document.addEventListener('DOMContentLoaded', () => {
+            const versionEl = document.getElementById('appVersion');
+            if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
+        });
+
         // ⚠️ Para pruebas rápidas, podés hardcodear la key acá.
         const DEFAULT_GROQ_API_KEY = "gsk_..."; // REEMPLAZA CON TU API KEY O DEJA VACÍO PARA USAR EL INPUT
         const GROQ_BASE_URL = "https://api.groq.com/openai/v1";

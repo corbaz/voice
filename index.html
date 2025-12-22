@@ -8,7 +8,7 @@
       }
     </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Voice AI • Neo</title>
+    <title>JCC Voice AI</title>
 
     <!-- Tailwind CSS v4.0.0 -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -101,7 +101,7 @@
       >
         <div class="flex items-center gap-3">
           <span class="material-icons text-cyan-400">mic</span>
-          <span class="font-semibold tracking-wide text-red-400">JCC Voice AI</span>
+          <span class="font-semibold tracking-wide text-red-400">JCC Voice AI <small id="appVersion" class="text-xs text-cyan-400 ml-1 font-normal"></small></span>
         </div>
       </header>
 
@@ -297,12 +297,16 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/js/all.min.js"></script>
     </div>
 
+    <!-- Carga de variables de entorno locales (solo desarrollo) -->
+    <!-- Este script (env.js) será ignorado si no existe (404) en producción -->
+    <script src="env.js"></script>
+
     <!-- MAIN LOGIC SCRIPT (Merged from old index.html) -->
     <script>
         // ==========================================
         // CONFIG & STATE
         // ==========================================
-        const APP_VERSION = "2.0";
+        const APP_VERSION = "2.3";
 
         // Initialize Version Display
         document.addEventListener('DOMContentLoaded', () => {
@@ -310,8 +314,11 @@
             if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
         });
 
-        // ⚠️ Para pruebas rápidas, podés hardcodear la key acá.
-        const DEFAULT_GROQ_API_KEY = "gsk_..."; // REEMPLAZA CON TU API KEY O DEJA VACÍO PARA USAR EL INPUT
+        // ⚠️ Intenta cargar desde env.js (window.LOCAL_ENV), si no existe usa el placeholder
+        const DEFAULT_GROQ_API_KEY = (typeof window.LOCAL_ENV !== 'undefined' && window.LOCAL_ENV.GROQ_API_KEY) 
+                                     ? window.LOCAL_ENV.GROQ_API_KEY 
+                                     : "gsk_..."; 
+        
         const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
     
         const apiKeyInput = document.getElementById("apiKey");
@@ -522,6 +529,12 @@
     
             // Determinar idioma seleccionado
             const isEnglish = document.querySelector('input[name="lang"][value="en"]').checked;
+
+            // Obtener nombre de la voz que se usará
+            const voiceSelect = isEnglish ? voicesEnSelect : voicesEsSelect;
+            const voiceName = voiceSelect.value || "Automática";
+            
+            log(`🗣️ Voz configurada para respuesta: ${voiceName}`);
             
             const systemPrompt = isEnglish 
                 ? "You are a helpful assistant. You MUST answer in English. Even if the user speaks Spanish, translate your thought process and reply ONLY in English." 
@@ -598,10 +611,11 @@
             voicesEsSelect.innerHTML = "";
             voicesEnSelect.innerHTML = "";
             
-            availableVoices.forEach((voice, index) => {
+            availableVoices.forEach((voice) => {
                 const option = document.createElement("option");
                 option.textContent = `${voice.name} (${voice.lang})`;
-                option.value = index;
+                // USAR EL NOMBRE DE LA VOZ COMO VALOR (Más seguro que el índice)
+                option.value = voice.name;
                 
                 if (voice.lang.startsWith("es")) {
                     voicesEsSelect.appendChild(option);
@@ -614,13 +628,13 @@
             if (voicesEsSelect.options.length === 0) {
                 const opt = document.createElement("option");
                 opt.textContent = "Predeterminada (ES)";
-                opt.value = -1;
+                opt.value = "";
                 voicesEsSelect.appendChild(opt);
             }
             if (voicesEnSelect.options.length === 0) {
                 const opt = document.createElement("option");
                 opt.textContent = "Default (EN)";
-                opt.value = -1;
+                opt.value = "";
                 voicesEnSelect.appendChild(opt);
             }
     
@@ -643,6 +657,21 @@
                  populateVoiceLists();
             }
         };
+
+        // --- UX: Auto-seleccionar idioma al cambiar voz ---
+        voicesEsSelect.addEventListener('change', () => {
+            if (voicesEsSelect.value) {
+                document.querySelector('input[name="lang"][value="es"]').checked = true;
+                log("Idioma cambiado a Español por selección de voz.");
+            }
+        });
+
+        voicesEnSelect.addEventListener('change', () => {
+            if (voicesEnSelect.value) {
+                document.querySelector('input[name="lang"][value="en"]').checked = true;
+                log("Language switched to English by voice selection.");
+            }
+        });
     
         function playTTS() {
           const text = llmResponseEl.value.trim();
@@ -667,21 +696,30 @@
           
           // Obtener la voz seleccionada del dropdown correspondiente
           const selectEl = isEnglish ? voicesEnSelect : voicesEsSelect;
-          const selectedIndex = parseInt(selectEl.value);
+          const selectedVoiceName = selectEl.value;
           
           let voiceToUse = null;
 
-          // 1. Intentar usar la voz específica seleccionada
-          if (selectedIndex >= 0 && availableVoices[selectedIndex]) {
-              voiceToUse = availableVoices[selectedIndex];
-              log("Intentando usar voz seleccionada: " + voiceToUse.name);
+          // 1. Intentar usar la voz específica seleccionada (Buscar por nombre)
+          if (selectedVoiceName) {
+              // Recargar voces por seguridad
+              const currentVoices = window.speechSynthesis.getVoices();
+              voiceToUse = currentVoices.find(v => v.name === selectedVoiceName);
+              
+              if (voiceToUse) {
+                  log("Intentando usar voz seleccionada: " + voiceToUse.name);
+              }
           } 
           
           // 2. Si no hay selección válida o la voz no coincide con el idioma, buscar forzadamente una del idioma correcto
+          // MEJORA: Priorizar SIEMPRE el idioma seleccionado sobre la voz específica si hay conflicto
           if (!voiceToUse || !voiceToUse.lang.startsWith(isEnglish ? "en" : "es")) {
-               log("⚠️ La voz seleccionada no coincide con el idioma o no es válida. Buscando alternativa...");
+               log("⚠️ Voz seleccionada no coincide con el idioma " + (isEnglish ? "EN" : "ES") + ". Buscando mejor opción...");
+               
+               // Buscar voz nativa exacta (ej. en-US o es-ES)
                voiceToUse = availableVoices.find(v => v.lang === (isEnglish ? "en-US" : "es-ES"));
                
+               // Si no, cualquier voz que empiece por el idioma (ej. en-GB o es-MX)
                if (!voiceToUse) {
                    voiceToUse = availableVoices.find(v => v.lang.startsWith(isEnglish ? "en" : "es"));
                }
