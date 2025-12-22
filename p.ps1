@@ -8,6 +8,9 @@ if (!(Test-Path -Path "dist")) {
 # Copy index.html to dist/index.html
 Copy-Item -Path "index.html" -Destination "dist/index.html" -Force
 
+# Copy js folder to dist/js
+Copy-Item -Path "js" -Destination "dist/js" -Recurse -Force
+
 # Run surge
 surge dist --domain voz-ia.surge.sh
 
