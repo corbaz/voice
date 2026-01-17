@@ -1,2 +1,8 @@
 env.js
+dist/
+cert.pem
+key.pem
+cert.conf
+ej.txt
+dark.jpeg
 .DS_Store
