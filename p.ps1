@@ -12,6 +12,16 @@ Copy-Item -Path "index.html" -Destination "dist/index.html" -Force
 # Copy js folder to dist/js
 Copy-Item -Path "js" -Destination "dist/js" -Recurse -Force
 
+# Copy css folder to dist/css
+if (Test-Path "css") {
+    Copy-Item -Path "css" -Destination "dist/css" -Recurse -Force
+}
+
+# Copy favicon.svg to dist/favicon.svg
+if (Test-Path "favicon.svg") {
+    Copy-Item -Path "favicon.svg" -Destination "dist/favicon.svg" -Force
+}
+
 # Run surge
 surge dist --domain voz-ia.surge.sh
 
