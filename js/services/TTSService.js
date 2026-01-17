@@ -7,6 +7,22 @@ export class TTSService {
         this.loadVoices();
     }
 
+    stripMarkdown(text) {
+        let result = text;
+        result = result.replace(/```[\s\S]*?```/g, "");
+        result = result.replace(/`([^`]+)`/g, "$1");
+        result = result.replace(/(\*\*|__)(.*?)\1/g, "$2");
+        result = result.replace(/(\*|_)(.*?)\1/g, "$2");
+        result = result.replace(/^#{1,6}\s+/gm, "");
+        result = result.replace(/!\[([^\]]*)]\([^)]+\)/g, "$1");
+        result = result.replace(/\[([^\]]+)]\(([^)]+)\)/g, "$1");
+        result = result.replace(/^\s*[-*+]\s+/gm, "");
+        result = result.replace(/^\s*\d+\.\s+/gm, "");
+        result = result.replace(/>\s?/g, "");
+        result = result.replace(/\n{3,}/g, "\n\n");
+        return result.trim();
+    }
+
     loadVoices() {
         this.voices = this.synthesis.getVoices();
         this.synthesis.addEventListener('voiceschanged', () => {
@@ -40,7 +56,8 @@ export class TTSService {
         return new Promise((resolve, reject) => {
             this.synthesis.cancel();
 
-            const utterance = new SpeechSynthesisUtterance(text);
+            const cleanedText = this.stripMarkdown(text);
+            const utterance = new SpeechSynthesisUtterance(cleanedText);
             const voice = this.findBestVoice(langCode, voiceName);
 
             if (voice) {
