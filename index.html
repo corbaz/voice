@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+    }
+  </script>
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval' blob:;" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <title>JCC Voice AI</title>
+
+  <!-- Tailwind CSS v4.0.0 -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <!-- Flowbite v4.0.0 -->
+  <link href="https://cdn.jsdelivr.net/npm/flowbite@4.0.0/dist/flowbite.min.css" rel="stylesheet" />
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+  <!-- Font Awesome v7.0.1 (CSS + JS) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet" />
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <link href="css/styles.css" rel="stylesheet" />
+</head>
+
+<body class="bg-black text-white overflow-x-hidden font-sans">
+  <div id="app">
+    <header class="h-24 bg-black backdrop-blur border-b border-white/10 flex items-center px-6">
+      <div class="flex items-center gap-3">
+        <span class="material-icons text-cyan-400">mic</span>
+        <span class="font-semibold tracking-wide text-red-400">JCC Voice AI <small id="appVersion"
+            class="text-xs text-cyan-400 ml-1 font-normal"></small></span>
+      </div>
+    </header>
+
+    <main class="relative">
+      <div class="flex flex-col items-center justify-start min-h-screen p-4 gap-6 max-w-4xl mx-auto w-full">
+
+        <!-- API Key Section (Accordion) -->
+
+        <div class="w-full bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm overflow-hidden">
+
+          <button id="apiKeyAccordionBtn" type="button"
+            class="w-full p-4 flex justify-between items-center text-left hover:bg-white/5 transition-colors focus:outline-none"
+            aria-expanded="false">
+
+            <span class="text-cyan-400 text-sm font-bold flex items-center gap-2">
+
+              <span class="material-icons text-sm">vpn_key</span> API Key de Groq
+
+            </span>
+
+            <span id="apiKeyArrow"
+              class="material-icons text-cyan-400 transition-transform duration-200">expand_more</span>
+
+          </button>
+
+          <div id="apiKeyContent" class="hidden px-4 pb-4 border-t border-white/5 pt-4">
+            <label for="apiKey" class="sr-only">Ingresa tu API Key</label>
+            <div class="relative">
+              <input id="apiKey" type="password"
+                class="w-full bg-black/50 text-cyan-400 placeholder-red-400 border border-white/20 rounded px-3 py-2 pr-16 focus:outline-none focus:border-cyan-400 transition-colors font-normal text-sm"
+                placeholder="gsk_..." />
+              <button id="toggleApiKeyBtn" type="button"
+                class="absolute right-3 top-0 h-full flex items-center text-gray-400 hover:text-cyan-400 focus:outline-none"
+                title="Mostrar/Ocultar clave">
+                <span class="material-icons text-lg" id="apiKeyVisibilityIcon">visibility</span>
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              Tu APIKEY se usa para conectar con la API.
+              <a href="https://console.groq.com/keys" target="_blank" class="text-cyan-400 hover:text-cyan-300 underline ml-1" title="Abre en nueva pestaña">Obtener API Key</a>
+            </p>
+          </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Main Controls -->
+          <div class="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm flex flex-col gap-4">
+            <h2 class="text-xl text-red-400 font-bold border-b border-white/10 pb-2">Control de Voz</h2>
+
+            <div class="flex gap-2 flex-wrap">
+              <button id="recordBtn"
+                class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                <span class="material-icons">mic</span> Grabar
+              </button>
+              <button id="stopBtn" disabled
+                class="flex-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                <span class="material-icons">stop</span> Detener
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2 bg-black/30 p-3 rounded-lg border border-white/5">
+              <input type="checkbox" id="autoMode" checked
+                class="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2">
+              <label for="autoMode" class="text-sm text-gray-300 select-none cursor-pointer">
+                <strong>Modo Automático</strong> (Grabar-Transcribir-Hablar)
+              </label>
+            </div>
+
+            <p id="recordStatus" class="text-center text-sm text-cyan-400 font-mono">Estado: inactivo</p>
+          </div>
+
+          <!-- Voice Settings -->
+          <div class="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm flex flex-col gap-4">
+            <h2 class="text-xl text-red-400 font-bold border-b border-white/10 pb-2">Configuración de Voz</h2>
+
+            <div class="space-y-4">
+              <div class="bg-black/30 p-3 rounded-lg border border-white/5">
+                <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                  <input type="radio" name="lang" value="es" checked
+                    class="text-cyan-600 bg-gray-700 border-gray-600 focus:ring-cyan-500">
+                  <span class="text-white">🇪🇸 Español</span>
+                </label>
+                <select id="voicesEs"
+                  class="w-full bg-black/50 text-white text-sm border border-white/20 rounded px-2 py-1 focus:outline-none focus:border-cyan-400"></select>
+              </div>
+
+              <div class="bg-black/30 p-3 rounded-lg border border-white/5">
+                <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                  <input type="radio" name="lang" value="en"
+                    class="text-cyan-600 bg-gray-700 border-gray-600 focus:ring-cyan-500">
+                  <span class="text-white">🇺🇸 English</span>
+                </label>
+                <select id="voicesEn"
+                  class="w-full bg-black/50 text-white text-sm border border-white/20 rounded px-2 py-1 focus:outline-none focus:border-cyan-400"></select>
+              </div>
+            </div>
+
+            <button id="stopTTSBtn"
+              class="w-full bg-red-900/50 hover:bg-red-800/50 border border-red-500/30 text-red-200 py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+              <span class="material-icons">volume_off</span> Detener Voz IA
+            </button>
+          </div>
+        </div>
+
+        <!-- Conversation Area -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Input/Transcription -->
+          <div class="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm flex flex-col gap-2">
+            <label for="transcription"
+              class="text-lg text-cyan-400 font-semibold flex items-center gap-2 cursor-pointer">
+              <span class="material-icons text-sm">text_fields</span> Transcripción (Input)
+            </label>
+            <textarea id="transcription"
+              class="w-full h-32 bg-black/50 text-white border border-white/20 rounded-lg p-3 focus:outline-none focus:border-cyan-400 resize-none placeholder-red-400"
+              placeholder="Acá aparecerá lo que digas..."></textarea>
+            <button id="askBtn"
+              class="mt-2 bg-cyan-900/50 hover:bg-cyan-800/50 border border-cyan-500/30 text-cyan-200 py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
+              <span class="material-icons text-sm">send</span> Forzar Envío a LLM
+            </button>
+          </div>
+
+          <!-- Output/Response -->
+          <div class="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm flex flex-col gap-2">
+            <label for="llmResponse"
+              class="text-lg text-green-400 font-semibold flex items-center gap-2 cursor-pointer">
+              <span class="material-icons text-sm">smart_toy</span> Respuesta IA
+            </label>
+            <textarea id="llmResponse"
+              class="w-full h-32 bg-black/50 text-white border border-white/20 rounded-lg p-3 focus:outline-none focus:border-green-400 resize-none placeholder-red-400"
+              placeholder="Acá aparecerá la respuesta de la IA..."></textarea>
+            <button id="ttsBtn"
+              class="mt-2 bg-green-900/50 hover:bg-green-800/50 border border-green-500/30 text-green-200 py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
+              <span class="material-icons text-sm">record_voice_over</span> Repetir Voz
+            </button>
+          </div>
+        </div>
+
+        <!-- History & Log -->
+        <div class="w-full bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm">
+          <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
+            <h2 class="text-xl text-gray-400 font-bold">Registro del Sistema</h2>
+            <div class="flex items-center gap-4">
+              <span id="historyStatus" class="text-xs text-gray-500 font-mono"></span>
+              <button id="clearHistoryBtn"
+                class="text-xs bg-red-900/30 hover:bg-red-900/50 text-red-300 border border-red-500/30 px-3 py-1 rounded transition-colors flex items-center gap-1">
+                <span class="material-icons text-xs">delete_sweep</span> Borrar Historial
+              </button>
+            </div>
+          </div>
+          <div id="log"
+            class="w-full h-40 bg-black/80 text-green-400 font-mono text-xs p-3 rounded-lg border border-white/10 overflow-y-auto whitespace-pre-wrap">
+          </div>
+        </div>
+
+        <!-- Hidden Audio Element -->
+        <audio id="recordedAudio" controls style="display:none;"></audio>
+      </div>
+    </main>
+
+    <footer class="h-24 bg-black backdrop-blur border-t border-white/10 flex items-center justify-center px-6">
+      <div class="container mx-auto flex flex-col md:flex-row items-center justify-between">
+        <p class="text-lg font-semibold mr-4 uppercase py-4 text-red-400">
+          &copy; JCC Producciones - <span id="date-display"></span>
+        </p>
+        <div class="mb-4 md:mb-0 flex items-center text-red-400">
+          <div class="flex space-x-4">
+            <a href="https://www.facebook.com/JulioCorbaz" target="_blank" aria-label="Síguenos en Facebook"
+              class="text-[#1877F2] hover:opacity-80 transition duration-300"><i
+                class="fab fa-facebook-f text-2xl"></i></a>
+            <a href="https://x.com/chipy_corbaz" target="_blank" aria-label="Síguenos en X"
+              class="text-white hover:opacity-80 transition duration-300"><i class="fab fa-x-twitter text-2xl"></i></a>
+            <a href="https://www.instagram.com/juliocorbaz/" target="_blank" aria-label="Síguenos en Instagram"
+              class="text-[#E4405F] hover:opacity-80 transition duration-300"><i
+                class="fab fa-instagram text-2xl"></i></a>
+            <a href="https://www.youtube.com/@juliocorbaz" target="_blank" aria-label="Síguenos en Youtube"
+              class="text-[#FF0000] hover:opacity-80 transition duration-300"><i
+                class="fab fa-youtube text-2xl"></i></a>
+            <a href="https://www.tiktok.com/@chipy.mdp" target="_blank" aria-label="Síguenos en TikTok"
+              class="text-[#EE1D52] hover:opacity-80 transition duration-300"><i class="fab fa-tiktok text-2xl"></i></a>
+            <a href="https://www.linkedin.com/in/julio-corbaz/" target="_blank" aria-label="Síguenos en LinkedIn"
+              class="text-[#0A66C2] hover:opacity-80 transition duration-300"><i
+                class="fab fa-linkedin-in text-2xl"></i></a>
+            <a href="https://github.com/corbaz/voice" target="_blank" aria-label="Repositorio del proyecto en GitHub"
+              class="text-white hover:opacity-80 transition duration-300"><i class="fab fa-github text-2xl"></i></a>
+            <a href="https://corbaz.github.io/voice/" target="_blank" aria-label="Sitio publicado en GitHub Pages"
+              class="hover:opacity-80 transition duration-300">
+              <img src="https://docs.github.com/assets/cb-345/images/site/favicon.png" alt="GitHub Pages" style="height: 24px; width: auto;">
+            </a>
+            <a href="https://voz-ia.surge.sh" target="_blank" aria-label="Sitio publicado en Surge.sh"
+              class="hover:opacity-80 transition duration-300">
+              <img src="https://surge.sh/images/logos/svg/surge-logo.svg" alt="Surge.sh" style="height: 28px; width: auto;">
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Font Awesome v7.0.1 JS (opcional para íconos dinámicos) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/js/all.min.js"></script>
+  </div>
+
+  <!-- Local Environment Variables (Optional) -->
+  <script src="env.js?v=2"></script>
+
+  <!-- MAIN LOGIC SCRIPT (Modularized) -->
+  <script type="module" src="js/main.js?v=3.6"></script>
+</body>
+
+</html>
