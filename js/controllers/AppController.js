@@ -20,7 +20,7 @@ export class AppController {
         this.history = new ConversationHistory(this.storageService, AppConfig.HISTORY_LIMIT);
         this.audioRecorder = new AudioRecorderService();
         this.ttsService = new TTSService();
-        this.groqAPI = null; // Initialized lazily with API key
+        this.groqAPI = null;
     }
 
     initializeUI() {
@@ -31,52 +31,44 @@ export class AppController {
             apiKeyArrow: document.getElementById("apiKeyArrow"),
             toggleApiKeyBtn: document.getElementById("toggleApiKeyBtn"),
             apiKeyVisibilityIcon: document.getElementById("apiKeyVisibilityIcon"),
-            
             recordBtn: document.getElementById("recordBtn"),
             stopBtn: document.getElementById("stopBtn"),
             stopTTSBtn: document.getElementById("stopTTSBtn"),
             recordStatus: document.getElementById("recordStatus"),
-            
             transcriptionEl: document.getElementById("transcription"),
             askBtn: document.getElementById("askBtn"),
             llmResponseEl: document.getElementById("llmResponse"),
             ttsBtn: document.getElementById("ttsBtn"),
-            
             autoModeCheckbox: document.getElementById("autoMode"),
             clearHistoryBtn: document.getElementById("clearHistoryBtn"),
             historyStatusEl: document.getElementById("historyStatus"),
-            
             voicesEsSelect: document.getElementById("voicesEs"),
             voicesEnSelect: document.getElementById("voicesEn"),
-            
             langEsRadio: document.querySelector('input[name="lang"][value="es"]'),
             langEnRadio: document.querySelector('input[name="lang"][value="en"]')
         };
 
-        // Pre-fill API Key if available in config
         if (AppConfig.DEFAULT_GROQ_API_KEY && AppConfig.DEFAULT_GROQ_API_KEY !== "gsk_...") {
-            console.log("🔑 AppController: Pre-llenando API Key desde configuración");
+            console.log("AppController: Pre-llenando API Key desde configuracion");
             this.elements.apiKeyInput.value = AppConfig.DEFAULT_GROQ_API_KEY;
         } else {
-            console.log("🔑 AppController: No se encontró API Key válida en configuración");
+            console.log("AppController: No se encontro API Key valida en configuracion");
         }
 
-        // Update API Key Visibility Icon color based on content
         this.updateApiKeyIconColor();
         this.elements.apiKeyInput.addEventListener('input', () => this.updateApiKeyIconColor());
 
         this.updateHistoryStatus();
-        
+
         this.populateVoiceLists();
         window.speechSynthesis.addEventListener('voiceschanged', () => this.populateVoiceLists());
+
+        this.askBtnOriginalHTML = this.elements.askBtn.innerHTML;
     }
 
     updateApiKeyIconColor() {
         const hasData = this.elements.apiKeyInput.value.trim().length > 0;
-        
-        // Remove potential conflicting classes
         this.elements.apiKeyVisibilityIcon.classList.remove('text-gray-400', 'text-cyan-400', 'text-red-400');
-
         if (hasData) {
             this.elements.apiKeyVisibilityIcon.classList.add('text-cyan-400');
         } else {
@@ -85,7 +77,6 @@ export class AppController {
     }
 
     setupEventListeners() {
-        // Main Actions
         this.elements.recordBtn.onclick = () => this.handleRecord();
         this.elements.stopBtn.onclick = () => this.handleStopRecord();
         this.elements.askBtn.onclick = () => this.handleAskLLM();
@@ -93,7 +84,6 @@ export class AppController {
         this.elements.stopTTSBtn.onclick = () => this.handleStopTTS();
         this.elements.clearHistoryBtn.onclick = () => this.handleClearHistory();
 
-        // UI Interactions
         if (this.elements.apiKeyAccordionBtn) {
             this.elements.apiKeyAccordionBtn.addEventListener('click', () => {
                 this.elements.apiKeyContent.classList.toggle('hidden');
@@ -114,11 +104,10 @@ export class AppController {
             });
         }
 
-        // Auto-select language on voice change
         this.elements.voicesEsSelect.addEventListener('change', () => {
             if (this.elements.voicesEsSelect.value) {
                 this.elements.langEsRadio.checked = true;
-                this.logger.log("Idioma cambiado a Español por selección de voz.");
+                this.logger.log("Idioma cambiado a Espanol por seleccion de voz.");
             }
         });
 
@@ -129,35 +118,30 @@ export class AppController {
             }
         });
 
-        // Keyboard shortcuts
         this.elements.transcriptionEl.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'Enter') {
                 e.preventDefault();
-                this.elements.askBtn.click(); // Trigger click to provide visual feedback if any
+                this.elements.askBtn.click();
             }
         });
     }
 
-    // ========== Handlers ==========
-
     async handleRecord() {
-        // Stop any active TTS playback immediately
         this.ttsService.stop();
 
         try {
-            this.updateRecordStatus("Solicitando micrófono...", "yellow", true);
-            this.logger.log("Iniciando grabación...");
+            this.updateRecordStatus("Solicitando microfono...", "yellow", true);
+            this.logger.log("Iniciando grabacion...");
 
             const audioPromise = this.audioRecorder.startRecording();
-            
+
             this.elements.recordBtn.disabled = true;
             this.elements.stopBtn.disabled = false;
             this.updateRecordStatus("Grabando... 🔴", "red", true);
 
             const blob = await audioPromise;
-            this.logger.success(`Grabación completada: ${blob.size} bytes`);
-            
-            // Playback functionality (optional, hidden in current UI but logic exists)
+            this.logger.success(`Grabacion completada: ${blob.size} bytes`);
+
             const url = URL.createObjectURL(blob);
             const recordedAudio = document.getElementById("recordedAudio");
             if (recordedAudio) {
@@ -168,12 +152,12 @@ export class AppController {
             await this.handleTranscription(blob);
 
         } catch (error) {
-            this.logger.error(`Micrófono: ${error.message}`);
+            this.logger.error(`Microfono: ${error.message}`);
             this.updateRecordStatus(`Error: ${error.message}`, "red");
             VoiceAlert.fire({
                 icon: 'error',
-                title: 'Error de Micrófono',
-                text: `No se pudo acceder al micrófono:\n${error.message}`
+                title: 'Error de Microfono',
+                text: `No se pudo acceder al microfono:\n${error.message}`
             });
             this.elements.recordBtn.disabled = false;
             this.elements.stopBtn.disabled = true;
@@ -194,21 +178,19 @@ export class AppController {
 
             const text = await this.groqAPI.transcribe(audioBlob, "es");
             this.elements.transcriptionEl.value = text;
-            this.logger.success(`Transcripción recibida: ${text}`);
-            this.updateRecordStatus("Transcripción lista ✅", "green");
+            this.logger.success(`Transcripcion recibida: ${text}`);
+            this.updateRecordStatus("Transcripcion lista ✅", "green");
 
             if (this.elements.autoModeCheckbox.checked && text.trim()) {
                 await this.handleAskLLM();
             }
 
         } catch (error) {
-            this.logger.error(`Transcripción: ${error.message}`);
-            
-            let statusMsg = "Error Transcripción ❌";
+            this.logger.error(`Transcripcion: ${error.message}`);
+
+            let statusMsg = "Error Transcripcion ❌";
             let detailedError = "";
 
-            // Try to extract JSON error message from Groq response
-            // Expected format: "Transcription error: { ... }"
             try {
                 const jsonMatch = error.message.match(/Transcription error: ({.*})/);
                 if (jsonMatch && jsonMatch[1]) {
@@ -224,23 +206,23 @@ export class AppController {
             const errMsg = error.message.toLowerCase();
 
             if (detailedError) {
-                 statusMsg = detailedError.length > 30 ? detailedError.substring(0, 30) + "..." : detailedError;
-                 VoiceAlert.fire({ icon: 'error', title: 'Error de Transcripción', text: detailedError });
+                statusMsg = detailedError.length > 30 ? detailedError.substring(0, 30) + "..." : detailedError;
+                VoiceAlert.fire({ icon: 'error', title: 'Error de Transcripcion', text: detailedError });
             } else if (errMsg.includes("falta api key")) {
                 statusMsg = "Falta API Key 🔑";
-                VoiceAlert.fire({ icon: 'warning', title: 'Falta API Key', text: 'Por favor, ingresa tu API Key de Groq en la configuración.' });
+                VoiceAlert.fire({ icon: 'warning', title: 'Falta API Key', text: 'Por favor, ingresa tu API Key de Groq en la configuracion.' });
             } else if (errMsg.includes("401") || errMsg.includes("unauthorized")) {
-                statusMsg = "API Key Inválida 🚫";
-                VoiceAlert.fire({ icon: 'error', title: 'API Key Inválida', text: 'La clave proporcionada no es válida. Verifica que esté escrita correctamente.' });
+                statusMsg = "API Key Invalida 🚫";
+                VoiceAlert.fire({ icon: 'error', title: 'API Key Invalida', text: 'La clave proporcionada no es valida. Verifica que este escrita correctamente.' });
             } else if (errMsg.includes("404") || errMsg.includes("not found")) {
                 statusMsg = "Modelo no encontrado ❓";
-                VoiceAlert.fire({ icon: 'error', title: 'Modelo no encontrado', text: 'El modelo solicitado no está disponible.' });
+                VoiceAlert.fire({ icon: 'error', title: 'Modelo no encontrado', text: 'El modelo solicitado no esta disponible.' });
             } else if (errMsg.includes("429")) {
-                statusMsg = "Límite excedido ⏳";
-                VoiceAlert.fire({ icon: 'warning', title: 'Límite Excedido', text: 'Has superado el límite de uso de la API. Intenta más tarde.' });
+                statusMsg = "Limite excedido ⏳";
+                VoiceAlert.fire({ icon: 'warning', title: 'Limite Excedido', text: 'Has superado el limite de uso de la API. Intenta mas tarde.' });
             } else if (errMsg.includes("network") || errMsg.includes("failed to fetch")) {
-                statusMsg = "Error de conexión 🌐";
-                VoiceAlert.fire({ icon: 'error', title: 'Error de Conexión', text: 'No se pudo conectar con el servidor. Revisa tu internet.' });
+                statusMsg = "Error de conexion 🌐";
+                VoiceAlert.fire({ icon: 'error', title: 'Error de Conexion', text: 'No se pudo conectar con el servidor. Revisa tu internet.' });
             }
 
             this.updateRecordStatus(statusMsg, "red");
@@ -252,11 +234,14 @@ export class AppController {
         if (!inputText) {
             VoiceAlert.fire({
                 icon: 'warning',
-                title: 'Texto Vacío',
+                title: 'Texto Vacio',
                 text: 'No hay texto para enviar al LLM.'
             });
             return;
         }
+
+        this.elements.llmResponseEl.value = "";
+        this.setAskButtonLoading(true);
 
         try {
             this.logger.log("Enviando al LLM...");
@@ -266,13 +251,13 @@ export class AppController {
             const systemPrompt = this.buildSystemPrompt(isEnglish);
             const messages = this.buildChatMessages(systemPrompt, inputText, isEnglish);
 
-            // Determine voice name for logging purposes
             const voiceSelect = isEnglish ? this.elements.voicesEnSelect : this.elements.voicesEsSelect;
-            const voiceName = voiceSelect.value || "Automática";
-            this.logger.log(`🗣️ Voz configurada para respuesta: ${voiceName}`);
+            const voiceName = voiceSelect.value || "Automatica";
+            this.logger.log(`Voz configurada para respuesta: ${voiceName}`);
 
-            const reply = await this.groqAPI.chat(messages);
-            
+            const rawReply = await this.groqAPI.chat(messages);
+            const reply = this.cleanLLMResponse(rawReply);
+
             this.elements.llmResponseEl.value = reply;
             this.logger.success("Respuesta del LLM recibida");
 
@@ -280,18 +265,19 @@ export class AppController {
             this.history.add("assistant", reply);
             this.updateHistoryStatus();
 
+            this.setAskButtonLoading(false);
+
             if (this.elements.autoModeCheckbox.checked && reply.trim()) {
                 await this.handlePlayTTS();
             }
 
         } catch (error) {
+            this.setAskButtonLoading(false);
             this.logger.error(`LLM: ${error.message}`);
-            
-            let statusMsg = "Error en Chat ❌";
+
+            let statusMsg = "Error en Chat";
             let detailedError = "";
 
-            // Try to extract JSON error message from Groq response
-            // Expected format: "Chat error: { ... }"
             try {
                 const jsonMatch = error.message.match(/Chat error: ({.*})/);
                 if (jsonMatch && jsonMatch[1]) {
@@ -301,26 +287,25 @@ export class AppController {
                     }
                 }
             } catch (e) {
-                // JSON parsing failed, fallback to standard handling
+                // JSON parsing failed
             }
 
             const errMsg = error.message.toLowerCase();
 
             if (detailedError) {
-                // If we extracted a specific message from JSON, use it (truncated if too long)
                 statusMsg = detailedError.length > 30 ? detailedError.substring(0, 30) + "..." : detailedError;
                 VoiceAlert.fire({ icon: 'error', title: 'Error de Chat', text: detailedError });
             } else if (errMsg.includes("401") || errMsg.includes("unauthorized")) {
-                statusMsg = "API Key Inválida 🚫";
-                VoiceAlert.fire({ icon: 'error', title: 'API Key Inválida', text: 'La clave proporcionada no es válida. Verifica que esté escrita correctamente.' });
+                statusMsg = "API Key Invalida";
+                VoiceAlert.fire({ icon: 'error', title: 'API Key Invalida', text: 'La clave proporcionada no es valida. Verifica que este escrita correctamente.' });
             } else if (errMsg.includes("404") || errMsg.includes("not found")) {
-                statusMsg = "Modelo no encontrado ❓";
-                VoiceAlert.fire({ icon: 'error', title: 'Modelo no encontrado', text: 'El modelo solicitado no está disponible.' });
+                statusMsg = "Modelo no encontrado";
+                VoiceAlert.fire({ icon: 'error', title: 'Modelo no encontrado', text: 'El modelo solicitado no esta disponible.' });
             } else if (errMsg.includes("429")) {
-                statusMsg = "Límite excedido ⏳";
-                VoiceAlert.fire({ icon: 'warning', title: 'Límite Excedido', text: 'Has superado el límite de uso de la API. Intenta más tarde.' });
+                statusMsg = "Limite excedido";
+                VoiceAlert.fire({ icon: 'warning', title: 'Limite Excedido', text: 'Has superado el limite de uso de la API. Intenta mas tarde.' });
             }
-            
+
             this.updateRecordStatus(statusMsg, "red");
         }
     }
@@ -330,7 +315,7 @@ export class AppController {
         if (!text) {
             VoiceAlert.fire({
                 icon: 'warning',
-                title: 'Texto Vacío',
+                title: 'Texto Vacio',
                 text: 'No hay texto para convertir a voz.'
             });
             return;
@@ -343,9 +328,9 @@ export class AppController {
             const voiceName = voiceSelect.value;
 
             this.logger.log(`Reproduciendo texto con voz del navegador (${langCode.toUpperCase()})...`);
-            
+
             await this.ttsService.speak(text, langCode, voiceName);
-            this.logger.success("Fin de reproducción TTS.");
+            this.logger.success("Fin de reproduccion TTS.");
 
         } catch (error) {
             this.logger.error(`TTS: ${error.message || error}`);
@@ -354,7 +339,7 @@ export class AppController {
 
     handleStopTTS() {
         this.ttsService.stop();
-        this.logger.log("Reproducción detenida");
+        this.logger.log("Reproduccion detenida");
     }
 
     handleClearHistory() {
@@ -369,27 +354,26 @@ export class AppController {
     initializeGroqAPI() {
         const apiKey = this.elements.apiKeyInput.value.trim();
         if (!apiKey || apiKey === "gsk_...") {
-            throw new Error("Falta API key de Groq. Por favor ingrésala en la configuración (ícono de llave).");
+            throw new Error("Falta API key de Groq. Por favor ingresala en la configuracion (icono de llave).");
         }
 
         if (!this.groqAPI) {
             this.groqAPI = new GroqAPIService(apiKey, AppConfig.GROQ_BASE_URL);
         } else {
-             // Update API key if changed
-             if (apiKey !== this.groqAPI.apiKey) {
-                 this.groqAPI.apiKey = apiKey;
-             }
+            if (apiKey !== this.groqAPI.apiKey) {
+                this.groqAPI.apiKey = apiKey;
+            }
         }
     }
 
     buildSystemPrompt(isEnglish) {
         return isEnglish
             ? "You are a helpful assistant. You MUST answer in English. Even if the user speaks Spanish, translate your thought process and reply ONLY in English."
-            : "Sos un asistente útil. Debés responder SIEMPRE en español.";
+            : "Sos un asistente util. Debes responder SIEMPRE en espanol.";
     }
 
     buildChatMessages(systemPrompt, userInput, isEnglish) {
-        const languageHint = isEnglish ? " (Respond in English)" : " (Responder en español)";
+        const languageHint = isEnglish ? " (Respond in English)" : " (Responder en espanol)";
         return [
             { role: "system", content: systemPrompt },
             ...this.history.getAll(),
@@ -397,17 +381,41 @@ export class AppController {
         ];
     }
 
+    cleanLLMResponse(text) {
+        if (!text) return text;
+        // Elimina marcadores de cita de browser_search tipo [1+L6-L8] o similares con corchetes especiales
+        let result = text.replace(/[【\[][^\]】]*?L\d+[-–]?L?\d*[^\]】]*?[】\]]/g, "");
+        // Elimina marcadores de cita simples tipo [1] [2] al final de frases
+        result = result.replace(/\s*[【\[]\d+[†:][^\]】]*[】\]]/g, "");
+        result = result.replace(/\n{3,}/g, "\n\n");
+        return result.trim();
+    }
+
+    setAskButtonLoading(isLoading) {
+        if (!this.elements.askBtn) return;
+        this.elements.askBtn.disabled = isLoading;
+        if (isLoading) {
+            this.elements.askBtn.innerHTML = `
+                <svg class="animate-spin h-4 w-4 text-cyan-200" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                Esperando respuesta...
+            `;
+        } else {
+            this.elements.askBtn.innerHTML = this.askBtnOriginalHTML;
+        }
+    }
+
     updateRecordStatus(text, color, pulse = false) {
         this.elements.recordStatus.textContent = `Estado: ${text}`;
-        
-        // Remove old color classes
+
         this.elements.recordStatus.classList.remove("text-yellow-400", "text-red-500", "text-green-400", "animate-pulse");
-        
-        // Add new classes
+
         if (color === "yellow") this.elements.recordStatus.classList.add("text-yellow-400");
         if (color === "red") this.elements.recordStatus.classList.add("text-red-500");
         if (color === "green") this.elements.recordStatus.classList.add("text-green-400");
-        
+
         if (pulse) this.elements.recordStatus.classList.add("animate-pulse");
     }
 
@@ -426,11 +434,10 @@ export class AppController {
     }
 
     populateVoiceSelect(selectElement, voices, defaultLabel) {
-        // Save previous selection
         const prevValue = selectElement.value;
-        
+
         selectElement.innerHTML = "";
-        
+
         if (voices.length === 0) {
             const opt = document.createElement("option");
             opt.textContent = `Predeterminada (${defaultLabel})`;
@@ -444,8 +451,7 @@ export class AppController {
                 selectElement.appendChild(option);
             });
         }
-        
-        // Restore selection if valid
+
         if (prevValue && [...selectElement.options].some(o => o.value === prevValue)) {
             selectElement.value = prevValue;
         }
