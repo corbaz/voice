@@ -37,7 +37,8 @@ export class GroqAPIService {
             body: JSON.stringify({
                 model: AppConfig.MODELS.LLM,
                 messages,
-                temperature
+                temperature,
+                tools: [{ type: "browser_search" }]
             })
         });
 
