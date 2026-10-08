@@ -148,10 +148,22 @@
         <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Input/Transcription -->
           <div class="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm flex flex-col gap-2">
-            <label for="transcription"
-              class="text-lg text-cyan-400 font-semibold flex items-center gap-2 cursor-pointer">
-              <span class="material-icons text-sm">text_fields</span> Transcripción (Input)
-            </label>
+            <div class="flex items-center justify-between">
+              <label for="transcription"
+                class="text-lg text-cyan-400 font-semibold flex items-center gap-2 cursor-pointer">
+                <span class="material-icons text-sm">text_fields</span> Transcripción (Input)
+              </label>
+              <div class="flex items-center gap-1">
+                <button id="pasteTranscriptionBtn" type="button" title="Pegar desde el portapapeles"
+                  class="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors">
+                  <span class="material-icons text-base">content_paste</span>
+                </button>
+                <button id="clearTranscriptionBtn" type="button" title="Borrar texto"
+                  class="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors">
+                  <span class="material-icons text-base">delete</span>
+                </button>
+              </div>
+            </div>
             <textarea id="transcription"
               class="w-full h-32 bg-black/50 text-white border border-white/20 rounded-lg p-3 focus:outline-none focus:border-cyan-400 resize-none placeholder-red-400"
               placeholder="Acá aparecerá lo que digas..."></textarea>
@@ -163,10 +175,16 @@
 
           <!-- Output/Response -->
           <div class="bg-white/5 border border-white/10 p-6 rounded-xl backdrop-blur-sm flex flex-col gap-2">
-            <label for="llmResponse"
-              class="text-lg text-green-400 font-semibold flex items-center gap-2 cursor-pointer">
-              <span class="material-icons text-sm">smart_toy</span> Respuesta IA
-            </label>
+            <div class="flex items-center justify-between">
+              <label for="llmResponse"
+                class="text-lg text-green-400 font-semibold flex items-center gap-2 cursor-pointer">
+                <span class="material-icons text-sm">smart_toy</span> Respuesta IA
+              </label>
+              <button id="copyResponseBtn" type="button" title="Copiar al portapapeles"
+                class="h-8 w-8 flex items-center justify-center text-gray-400 hover:text-green-400 transition-colors">
+                <span class="material-icons text-base">content_copy</span>
+              </button>
+            </div>
             <textarea id="llmResponse"
               class="w-full h-32 bg-black/50 text-white border border-white/20 rounded-lg p-3 focus:outline-none focus:border-green-400 resize-none placeholder-red-400"
               placeholder="Acá aparecerá la respuesta de la IA..."></textarea>

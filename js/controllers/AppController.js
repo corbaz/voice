@@ -42,6 +42,9 @@ export class AppController {
             autoModeCheckbox: document.getElementById("autoMode"),
             clearHistoryBtn: document.getElementById("clearHistoryBtn"),
             historyStatusEl: document.getElementById("historyStatus"),
+            pasteTranscriptionBtn: document.getElementById("pasteTranscriptionBtn"),
+            clearTranscriptionBtn: document.getElementById("clearTranscriptionBtn"),
+            copyResponseBtn: document.getElementById("copyResponseBtn"),
             voicesEsSelect: document.getElementById("voicesEs"),
             voicesEnSelect: document.getElementById("voicesEn"),
             langEsRadio: document.querySelector('input[name="lang"][value="es"]'),
@@ -124,6 +127,18 @@ export class AppController {
                 this.elements.askBtn.click();
             }
         });
+
+        if (this.elements.pasteTranscriptionBtn) {
+            this.elements.pasteTranscriptionBtn.onclick = () => this.handlePasteTranscription();
+        }
+
+        if (this.elements.clearTranscriptionBtn) {
+            this.elements.clearTranscriptionBtn.onclick = () => this.handleClearTranscription();
+        }
+
+        if (this.elements.copyResponseBtn) {
+            this.elements.copyResponseBtn.onclick = () => this.handleCopyResponse();
+        }
     }
 
     async handleRecord() {
@@ -383,12 +398,84 @@ export class AppController {
 
     cleanLLMResponse(text) {
         if (!text) return text;
+        let result = text;
+
         // Elimina marcadores de cita de browser_search tipo [1+L6-L8] o similares con corchetes especiales
-        let result = text.replace(/[【\[][^\]】]*?L\d+[-–]?L?\d*[^\]】]*?[】\]]/g, "");
+        result = result.replace(/[【\[][^\]】]*?L\d+[-–]?L?\d*[^\]】]*?[】\]]/g, "");
         // Elimina marcadores de cita simples tipo [1] [2] al final de frases
         result = result.replace(/\s*[【\[]\d+[†:][^\]】]*[】\]]/g, "");
+
+        // Elimina formato Markdown
+        result = result.replace(/```[\s\S]*?```/g, "");
+        result = result.replace(/`([^`]+)`/g, "$1");
+        result = result.replace(/(\*\*|__)(.*?)\1/g, "$2");
+        result = result.replace(/(\*|_)(.*?)\1/g, "$2");
+        result = result.replace(/^#{1,6}\s+/gm, "");
+        result = result.replace(/!\[([^\]]*)]\([^)]+\)/g, "$1");
+        result = result.replace(/\[([^\]]+)]\(([^)]+)\)/g, "$1");
+        result = result.replace(/^\s*[-*+]\s+/gm, "");
+        result = result.replace(/^\s*\d+\.\s+/gm, "");
+        result = result.replace(/>\s?/g, "");
+
+        // Elimina emojis y simbolos pictograficos (rangos Unicode comunes de emoji)
+        result = result.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\uFE0F]/gu, "");
+
+        result = result.replace(/[ \t]{2,}/g, " ");
         result = result.replace(/\n{3,}/g, "\n\n");
         return result.trim();
+    }
+
+    async handlePasteTranscription() {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) {
+                this.elements.transcriptionEl.value = text;
+                this.logger.log("Texto pegado desde el portapapeles.");
+            }
+        } catch (error) {
+            this.logger.error(`No se pudo leer el portapapeles: ${error.message || error}`);
+            VoiceAlert.fire({
+                icon: 'error',
+                title: 'Error al Pegar',
+                text: 'No se pudo acceder al portapapeles. Verifica los permisos del navegador.'
+            });
+        }
+    }
+
+    handleClearTranscription() {
+        this.elements.transcriptionEl.value = "";
+        this.logger.log("Transcripcion borrada.");
+    }
+
+    async handleCopyResponse() {
+        const text = this.elements.llmResponseEl.value.trim();
+        if (!text) {
+            VoiceAlert.fire({
+                icon: 'warning',
+                title: 'Texto Vacio',
+                text: 'No hay respuesta para copiar.'
+            });
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            this.logger.success("Respuesta copiada al portapapeles.");
+
+            if (this.elements.copyResponseBtn) {
+                const icon = this.elements.copyResponseBtn.querySelector('span');
+                const original = icon.textContent;
+                icon.textContent = 'check';
+                setTimeout(() => { icon.textContent = original; }, 1500);
+            }
+        } catch (error) {
+            this.logger.error(`No se pudo copiar: ${error.message || error}`);
+            VoiceAlert.fire({
+                icon: 'error',
+                title: 'Error al Copiar',
+                text: 'No se pudo copiar al portapapeles. Verifica los permisos del navegador.'
+            });
+        }
     }
 
     setAskButtonLoading(isLoading) {
