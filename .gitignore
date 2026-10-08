@@ -6,3 +6,6 @@ cert.conf
 ej.txt
 dark.jpeg
 .DS_Store
+
+# graphify-axet
+.graphify/

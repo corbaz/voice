@@ -1,5 +1,5 @@
-const detectedKey = (typeof window.LOCAL_ENV !== 'undefined' && window.LOCAL_ENV.GROQ_API_KEY) 
-    ? window.LOCAL_ENV.GROQ_API_KEY 
+const detectedKey = (typeof window.LOCAL_ENV !== 'undefined' && window.LOCAL_ENV.GROQ_API_KEY)
+    ? window.LOCAL_ENV.GROQ_API_KEY
     : "gsk_...";
 
 console.log("🔧 Config: Clave detectada en env.js:", detectedKey === "gsk_..." ? "Template (No definida)" : "Clave válida encontrada");
@@ -10,7 +10,7 @@ export const AppConfig = {
     DEFAULT_GROQ_API_KEY: detectedKey,
     MODELS: {
         WHISPER: "whisper-large-v3",
-        LLM: "llama-3.3-70b-versatile"
+        LLM: "openai/gpt-oss-120b"
     },
     HISTORY_LIMIT: 20,
     TTS: {
